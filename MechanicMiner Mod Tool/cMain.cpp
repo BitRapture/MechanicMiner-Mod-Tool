@@ -112,17 +112,14 @@ cMain::cMain() : wxFrame(nullptr, wxID_ANY, "MM Mod Tool (v1.1)", wxPoint(200, 2
 
 cMain::~cMain()
 {
-	sprite_loc.clear();
-	sprite_link.clear();
-	sprite_temp_size.clear();
 	temp_hold.clear();
 	temp2_hold.clear();
-	asset_links.clear();
+	all_data.clear();
 	free(asset_hold);
 	free(link_hold);
 }
 
-unsigned long int cMain::reverse_read(UINT8* input, int size, int offset)
+unsigned long cMain::reverse_read(UINT8* input, int size, int offset)
 {
 	std::stringstream hexstream;
 	char hold[2];
@@ -133,7 +130,7 @@ unsigned long int cMain::reverse_read(UINT8* input, int size, int offset)
 	} 
 	return static_cast<unsigned>(strtoul(hexstream.str().c_str(), NULL, 16));
 }
-unsigned long int cMain::reverse_read(std::vector<UINT8> input, int size, int offset)
+unsigned long cMain::reverse_read(std::vector<UINT8> input, int size, int offset)
 {
 	std::stringstream hexstream;
 	char hold[2];
@@ -145,7 +142,7 @@ unsigned long int cMain::reverse_read(std::vector<UINT8> input, int size, int of
 	return static_cast<unsigned>(strtoul(hexstream.str().c_str(), NULL, 16));
 }
 
-std::vector<UINT8> cMain::split_hex(unsigned long int input)
+std::vector<UINT8> cMain::split_hex(unsigned long input)
 {
 	std::vector<UINT8> output;
 	char hold[16], hex[3];
@@ -180,26 +177,49 @@ void cMain::check_enable()
 		txt_func_status->SetForegroundColour(wxColour(247, 203, 27));
 		txt_func_status->SetLabelText(wxString("LINKING OFFSETS"));
 
-		// Link up asset offsets
-		unsigned long int link_offset, asset_offset, i = 0;
-		while(i < link_size)
+		unsigned long i = 0, ii, get_link, get_flink, get_asset_link, get_fasset_link;
+		total_sprites = 0;
+		while (i < link_size)
 		{
-			link_offset = reverse_read(link_hold, 7, i);
-			asset_offset = reverse_read(asset_hold, 7, link_offset);
+			get_link = reverse_read(link_hold, 7, i);
+			get_flink = (i + 8 < link_size) ? reverse_read(link_hold, 7, i + 8) : 0;
+			get_asset_link = reverse_read(asset_hold, 7, get_link);
+			get_fasset_link = (get_flink != 0) ? reverse_read(asset_hold, 7, get_flink) : 0;
 			
-			asset_links.push_back(asset_offset);
-
-			if (asset_hold[asset_offset + 4] == 0x89 && asset_hold[asset_offset + 5] == 0x50 && asset_hold[asset_offset + 6] == 0x4E && asset_hold[asset_offset + 7] == 0x47)
+			all_data.push_back(data_set());
+			if (asset_hold[get_asset_link + 4] == 0x89 && asset_hold[get_asset_link + 4 + 1] == 0x50 && asset_hold[get_asset_link + 4 + 2] == 0x4E && asset_hold[get_asset_link + 4 + 3] == 0x47)
 			{
-				sprite_link.push_back(link_offset);
+				all_data[all_data.size() - 1].data_type = "sprite";
+				total_sprites++;
 			}
+			else {
+				all_data[all_data.size() - 1].data_type = "other";
+			}
+			all_data[all_data.size() - 1].link = get_link;
+			all_data[all_data.size() - 1].asset_link = get_asset_link;
+			
+			ii = 0;
+			while (1)
+			{
+				if (get_fasset_link != 0)
+				{
+					if (get_asset_link + ii >= get_fasset_link) break;
+				}
+				else {
+					if (get_asset_link + ii >= asset_size) break;
+				}
+				//all_data[all_data.size() - 1].data.push_back(asset_hold[get_asset_link + ii]);
+
+				ii++;
+			}
+
 			i += 8;
 		}
 
 		list_funcs->Enable();
 		btn_func->Enable();
 		txt_func_status->SetForegroundColour(wxColour(30, 189, 33));
-		txt_func_status->SetLabelText("LINKED " + std::to_string(sprite_link.size()) + " ASSETS");
+		txt_func_status->SetLabelText("LINKED " + std::to_string(total_sprites) + " ASSETS");
 	}
 }
 
@@ -218,55 +238,11 @@ void cMain::relink_offsets()
 		export both new files
 		get on knees and pray
 	*/
-
-	unsigned long int i = 0, ii = 0, ts = 0, sprite_accum = 0, link_offset, casset_offset;
-	int size_diff;
-	while (i < link_size)
-	{
-		link_offset = reverse_read(link_hold, 7, i);
-		casset_offset = reverse_read(temp_hold, 7, link_offset);
-
-		if (casset_offset != asset_links[ii])
-		{
-			if (sprite_link[ts] == link_offset)
-			{
-				sprite_accum += sprite_temp2_size[ts];
-				if (sprite_temp_size[ts] != sprite_temp2_size[ts])
-				{
-					if (sprite_temp2_size[ts] < sprite_temp_size[ts])
-					{
-						size_diff = 1;
-					}
-					else {
-						size_diff = -1;
-					}
-					while (1)
-					{
-
-					}
-				}
-			}
-			ts++;
-		}
-
-		std::vector<UINT8> new_link = split_hex(link_offset);
-		for (int nl = 1; nl < 9; nl++)
-		{
-			temp2_hold.push_back(new_link[8 - nl]);
-		}
-
-		i += 8;
-		ii++;
-	}
-
-	sprite_temp_size.clear();
-	std::vector<unsigned long int>().swap(sprite_temp_size);
-	sprite_temp2_size.clear();
-	std::vector<unsigned long int>().swap(sprite_temp2_size);
 }
 
 void cMain::repack()
 {
+	/*
 	temp_hold.clear();
 	std::vector<UINT8>().swap(temp_hold);
 	unsigned int i = 0, p, endp;
@@ -335,41 +311,36 @@ void cMain::repack()
 
 	txt_func_status->SetForegroundColour(wxColour(30, 189, 33));
 	txt_func_status->SetLabelText("ASSET FILE REPACKED");
+	*/
 }
 
 void cMain::dump_all()
 {
-	unsigned int p = 0;
+	unsigned long dumped_total = 0;
 	txt_func_status->SetForegroundColour(wxColour(247, 203, 27));
-	txt_func_status->SetLabelText("DUMPING 0/" + std::to_string(sprite_loc.size()) + "ASSETS");
-	for (unsigned int i = 0; i < sprite_loc.size(); i++)
+	txt_func_status->SetLabelText("DUMPING 0/" + std::to_string(total_sprites) + " ASSETS");
+	for (unsigned long i = 0; i < all_data.size(); i++)
 	{
-		wxFFileOutputStream asset(dir_path.GetName() + "\\asset_" + std::to_string(i) + ".png");
-		txt_func_status->SetLabelText("DUMPING " + std::to_string(i + 1) + "/" + std::to_string(sprite_loc.size()) + " ASSETS");
+		if (all_data[i].data_type != "sprite") continue;
+		
+		wxFFileOutputStream asset(dir_path.GetName() + "\\asset_" + std::to_string(dumped_total) + ".png");
+		txt_func_status->SetLabelText("DUMPING " + std::to_string(dumped_total + 1) + "/" + std::to_string(total_sprites) + " ASSETS");
+		
 		temp_hold.clear();
 		std::vector<UINT8>().swap(temp_hold);
-		p = 0;
-		while (1)
+		
+		for (unsigned long ii = 4; ii < all_data[dumped_total].data.size(); ii++)
 		{
-			temp_hold.push_back(asset_hold[sprite_loc[i] + p]);
-			if (asset_hold[sprite_loc[i] + p] == 0x49 && asset_hold[sprite_loc[i] + p + 1] == 0x45 && asset_hold[sprite_loc[i] + p + 2] == 0x4E && asset_hold[sprite_loc[i] + p + 3] == 0x44 && asset_hold[sprite_loc[i] + p + 4] == 0xAE && asset_hold[sprite_loc[i] + p + 5] == 0x42 && asset_hold[sprite_loc[i] + p + 6] == 0x60 && asset_hold[sprite_loc[i] + p + 7] == 0x82)
-			{
-				temp_hold.push_back(0x45);
-				temp_hold.push_back(0x4E);
-				temp_hold.push_back(0x44);
-				temp_hold.push_back(0xAE);
-				temp_hold.push_back(0x42);
-				temp_hold.push_back(0x60);
-				temp_hold.push_back(0x82);
-				break;
-			}
-			p++;
+			temp_hold.push_back(all_data[dumped_total].data[ii]);
 		}
+
 		UINT8* buffer = (UINT8*)malloc(temp_hold.size());
 		if (buffer == nullptr) return;
-		for (unsigned int ii = 0; ii < temp_hold.size(); ii++) { buffer[ii] = temp_hold[ii]; }
+		for (unsigned long ii = 0; ii < temp_hold.size(); ii++) { buffer[ii] = temp_hold[ii]; }
 		asset.WriteAll(buffer, temp_hold.size());
 		free(buffer);
+
+		dumped_total++;
 	}
 	temp_hold.clear();
 	std::vector<UINT8>().swap(temp_hold);
@@ -414,18 +385,6 @@ void cMain::open_pressed(wxCommandEvent& evt)
 			txt_open_status->SetLabelText("INCORRECT FILE");
 			evt.Skip();
 			return;
-		}
-
-		// Find and save PNGs
-		for (unsigned int i = 0; i < asset_size; i++)
-		{
-			if (i + (unsigned)3 < asset_size)
-			{
-				if (asset_hold[i] == 0x89 && asset_hold[i + 1] == 0x50 && asset_hold[i + 2] == 0x4E && asset_hold[i + 3] == 0x47)
-				{
-					sprite_loc.push_back(i);
-				}
-			}
 		}
 
 		asset_loaded = true;
@@ -515,7 +474,6 @@ void cMain::dir_pressed(wxCommandEvent& evt)
 		txt_dir_status->SetLabelText("CONNECTED");
 		btn_dir->Disable();
 		ctrl_dir->Disable();
-
 
 		check_enable();
 

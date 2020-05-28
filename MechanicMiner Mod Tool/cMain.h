@@ -40,7 +40,6 @@ public:
 
 	// Global funcs
 	unsigned long reverse_read(UINT8* input, int size, int offset = 0);
-	unsigned long reverse_read(std::vector<UINT8> input, int size, int offset = 0);
 	std::vector<UINT8> split_hex(unsigned long input);
 
 	// Specific funcs

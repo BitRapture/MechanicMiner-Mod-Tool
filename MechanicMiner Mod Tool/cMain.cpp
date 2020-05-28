@@ -123,17 +123,6 @@ unsigned long cMain::reverse_read(UINT8* input, int size, int offset)
 	} 
 	return static_cast<unsigned>(strtoul(hexstream.str().c_str(), NULL, 16));
 }
-unsigned long cMain::reverse_read(std::vector<UINT8> input, int size, int offset)
-{
-	std::stringstream hexstream;
-	char hold[2];
-	for (int i = size; i > -1; i--)
-	{
-		itoa(input[i + offset], hold, 16);
-		hexstream << std::setfill('0') << std::setw(2) << hold;
-	}
-	return static_cast<unsigned>(strtoul(hexstream.str().c_str(), NULL, 16));
-}
 
 std::vector<UINT8> cMain::split_hex(unsigned long input)
 {

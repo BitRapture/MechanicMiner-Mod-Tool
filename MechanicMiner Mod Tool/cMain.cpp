@@ -96,7 +96,6 @@ cMain::cMain() : wxFrame(nullptr, wxID_ANY, "MM Mod Tool (v1.1)", wxPoint(200, 2
 	list_funcs->SetBackgroundColour(wxColour(23, 26, 28));
 	list_funcs->SetForegroundColour(wxColour(173, 190, 201));
 	wxArrayString functions;
-	functions.Add("REPACK ASSET FILE (.MMTP)");
 	functions.Add("REPACK ASSET FILE (RAW)");
 	functions.Add("DUMP ALL SPRITE ASSETS");
 	list_funcs->Append(functions);
@@ -106,7 +105,6 @@ cMain::cMain() : wxFrame(nullptr, wxID_ANY, "MM Mod Tool (v1.1)", wxPoint(200, 2
 cMain::~cMain()
 {
 	temp_hold.clear();
-	temp2_hold.clear();
 	all_assets.clear();
 	free(asset_hold);
 	free(link_hold);

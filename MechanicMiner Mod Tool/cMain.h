@@ -24,7 +24,7 @@ private:
 	unsigned int asset_size, link_size;
 	std::vector<unsigned long> sprite_locations;
 	UINT8* asset_hold, *link_hold;
-	std::vector<UINT8> temp_hold, temp2_hold;
+	std::vector<UINT8> temp_hold;
 	std::vector<asset_obj> all_assets;
 
 	wxStaticText* txt_open, *txt_open2, *txt_open_status, *txt_open2_status, *txt_dir, *txt_dir_status, *txt_func, *txt_func_status;

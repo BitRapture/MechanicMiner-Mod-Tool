@@ -146,9 +146,9 @@ std::vector<UINT8> cMain::split_hex(unsigned long input)
 	while (i < 16)
 	{
 		hex[0] = '0';
-		if (i - 1 < strlen(hold)) hex[0] = hold[i - 1];
+		if (i - 1 < strnlen_s(hold, sizeof hold)) hex[0] = hold[i - 1];
 		hex[1] = '0';
-		if (i < strlen(hold))
+		if (i < strnlen_s(hold, sizeof hold))
 		{
 			hex[1] = hold[i];
 		}

@@ -2,6 +2,7 @@
 #include <vector>
 #include <sstream>
 #include <iomanip>
+#include <string>
 #include "wx/wx.h"
 #include "wx/dir.h"
 #include "wx/wfstream.h"

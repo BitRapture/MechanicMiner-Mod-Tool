@@ -22,13 +22,6 @@ wxEND_EVENT_TABLE()
 	Asset links Btn =			10008,
 */
 
-/*
-	DEBUG copy-paste:
-C:\Users\FiercePC\Desktop\main.mechanicminer_asset_64
-C:\Users\FiercePC\Desktop\main.mechanicminer_asset_64_links
-C:\Users\FiercePC\Desktop\Template
-*/
-
 cMain::cMain() : wxFrame(nullptr, wxID_ANY, "MM Mod Tool (v1.1)", wxPoint(200, 200), wxSize(450, 340), wxSYSTEM_MENU | wxCAPTION | wxCLOSE_BOX | wxCLIP_CHILDREN | wxSTAY_ON_TOP)
 {
 	asset_loaded = false;

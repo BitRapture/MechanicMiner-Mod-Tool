@@ -10,9 +10,9 @@ This tool currently allows for sprite asset dumping and asset repacking. That's 
 - Create texture pack file (`texture_pack_example.mmmtp`)
  - Create special file header to lessen the likelihood of app breaking
 - Add more asset options
- - Dump WAVE files
-  - Repack WAVE files (will just be included within the repacking option)
- - Dump sprite sheets
-   - John sprite sheets
-   - Jones sprite sheets
-   - Mob sprite sheets
+  - Dump WAVE files
+    - Repack WAVE files (will just be included within the repacking option)
+  - Dump sprite sheets
+    - John sprite sheets
+    - Jones sprite sheets
+    - Mob sprite sheets

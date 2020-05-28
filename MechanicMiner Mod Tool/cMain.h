@@ -6,14 +6,25 @@
 #include "wx/dir.h"
 #include "wx/wfstream.h"
 
+struct asset_obj
+{
+	std::string type = "other";
+	bool changed = false;
+	unsigned long data_size = 0;
+	unsigned long link = 0;
+	std::vector<UINT8> data;
+};
+
 class cMain : public wxFrame
 {
 
 private:
 	bool asset_loaded, link_loaded, directory_saved;
-	unsigned int asset_size, link_size, total_sprites;
+	unsigned int asset_size, link_size;
+	std::vector<unsigned long> sprite_locations;
 	UINT8* asset_hold, *link_hold;
 	std::vector<UINT8> temp_hold, temp2_hold;
+	std::vector<asset_obj> all_assets;
 
 	wxStaticText* txt_open, *txt_open2, *txt_open_status, *txt_open2_status, *txt_dir, *txt_dir_status, *txt_func, *txt_func_status;
 	wxTextCtrl* ctrl_open, *ctrl_open2, *ctrl_dir;
@@ -33,7 +44,6 @@ public:
 
 	// Specific funcs
 	void check_enable();
-	void relink_offsets();
 	void repack();
 	void dump_all();
 

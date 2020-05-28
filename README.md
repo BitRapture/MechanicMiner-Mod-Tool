@@ -1,4 +1,7 @@
 # MechanicMiner-Mod-Tool
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/52246e25d0a0400da760148c50d22518)](https://app.codacy.com/manual/BitRapture/MechanicMiner-Mod-Tool?utm_source=github.com&utm_medium=referral&utm_content=BitRapture/MechanicMiner-Mod-Tool&utm_campaign=Badge_Grade_Dashboard)
+
 A mod tool for the game, Mechanic Miner.
 
 This tool allows for asset dumping and asset repacking.

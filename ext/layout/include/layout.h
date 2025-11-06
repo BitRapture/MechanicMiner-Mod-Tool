@@ -28,12 +28,13 @@ namespace br::UI
     private:
         void PopulateIDs();
         void UpdateElement(Element& element);
+        void RecalculateContiguousLayout(Element& element);
+        void RecalculateFloatingLayout(Element& element);
 
     private:
         Element m_Root;
 
-        std::unordered_map<std::string, size_t> m_IDIndexMap;
-        std::vector<Element const*> m_IDElements;
+        std::unordered_map<std::string, Element const*> m_IDIndexMap;
         size_t m_TotalElements;
     };
 }

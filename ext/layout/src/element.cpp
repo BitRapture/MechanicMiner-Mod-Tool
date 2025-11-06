@@ -5,8 +5,8 @@ using namespace br::UI;
 
 bool Element::Properties::IsConstrained(ChildContentLayout layout) const
 {
-    bool const constrainedX = m_MaxWidth >= 0 && layout == ChildContentLayout::Horizontal;
-    bool const constrainedY = m_MaxHeight >= 0 && layout == ChildContentLayout::Vertical;
+    bool const constrainedX = m_MaxWidth >= 0.0f && layout == ChildContentLayout::Horizontal;
+    bool const constrainedY = m_MaxHeight >= 0.0f && layout == ChildContentLayout::Vertical;
 
     return constrainedX || constrainedY;
 }
@@ -29,13 +29,13 @@ Element::Properties& Element::Properties::SetChildGrowthDirection(ChildGrowthDir
     return *this;
 }
 
-Element::Properties& Element::Properties::SetMaxWidth(float maxWidth)
+Element::Properties& Element::Properties::SetMaxWidth(PercentOrValue const& maxWidth)
 {
     m_MaxWidth = maxWidth;
     return *this;
 }
 
-Element::Properties& Element::Properties::SetMaxHeight(float maxHeight)
+Element::Properties& Element::Properties::SetMaxHeight(PercentOrValue const& maxHeight)
 {
     m_MaxHeight = maxHeight;
     return *this;

@@ -1,5 +1,6 @@
 #pragma once
 #include "layout_properties.h"
+#include "percent_or_value.h"
 
 #include <functional>
 #include <string>
@@ -22,8 +23,8 @@ namespace br::UI
             std::string m_ID = std::string();
             ChildContentLayout m_ChildContentLayout = ChildContentLayout::Vertical;
             ChildGrowthDirection m_ChildGrowthDirection = ChildGrowthDirection::LeftToRight;
-            float m_MaxWidth = -1.0f;
-            float m_MaxHeight = -1.0f;
+            PercentOrValue m_MaxWidth = -1.0f;
+            PercentOrValue m_MaxHeight = -1.0f;
 
         public:
             bool IsConstrained(ChildContentLayout layout) const;
@@ -32,8 +33,8 @@ namespace br::UI
             Properties& SetID(std::string const& id);
             Properties& SetChildContentLayout(ChildContentLayout layout);
             Properties& SetChildGrowthDirection(ChildGrowthDirection direction);
-            Properties& SetMaxWidth(float maxWidth);
-            Properties& SetMaxHeight(float maxHeight);
+            Properties& SetMaxWidth(PercentOrValue const& maxWidth);
+            Properties& SetMaxHeight(PercentOrValue const& maxHeight);
         };
 
     public:

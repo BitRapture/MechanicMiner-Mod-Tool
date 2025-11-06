@@ -28,6 +28,11 @@ namespace LayoutHelpers
     {
         return x >= rectX && x <= rectX + width && y >= rectY && y <= rectY + height;
     }
+
+    float GetValidValue(PercentOrValue const& property, float value)
+    {
+        return property >= 0.0f ? property.GetMinOrScaledValue(value) : value;
+    }
 }
 
 bool Layout::HasID(std::string const& id) const
@@ -40,7 +45,7 @@ Element const& Layout::GetElement(std::string const& id) const
     if (!HasID(id))
         throw;
     
-    return *m_IDElements.at(m_IDIndexMap.at(id));
+    return *m_IDIndexMap.at(id);
 }
 
 bool Layout::FindLastElementRectForPosition(float x, float y, float& outX, float& outY, float& outWidth, float& outHeight) const
@@ -73,10 +78,12 @@ bool Layout::FindLastElementRectForPosition(float x, float y, float& outX, float
 
 void Layout::ResizeContent(float width, float height)
 {
+    Element::Properties const& properties = m_Root.m_Properties;
+
     m_Root.m_X = 0.0f;
     m_Root.m_Y = 0.0f;
-    m_Root.m_Width = width;
-    m_Root.m_Height = height;
+    m_Root.m_Width = LayoutHelpers::GetValidValue(properties.m_MaxWidth, width);
+    m_Root.m_Height = LayoutHelpers::GetValidValue(properties.m_MaxHeight, height);
 
     UpdateElement(m_Root);
 }
@@ -84,7 +91,6 @@ void Layout::ResizeContent(float width, float height)
 void Layout::PopulateIDs()
 {
     m_IDIndexMap.clear();
-    m_IDElements.clear();
     m_TotalElements = 1;
 
     m_Root.TraverseChildren([&](Element const& element)
@@ -92,8 +98,7 @@ void Layout::PopulateIDs()
         Element::Properties const& properties = element.m_Properties;
         if (!properties.m_ID.empty())
         {
-            m_IDIndexMap[properties.m_ID] = m_IDElements.size();
-            m_IDElements.emplace_back(&element);
+            m_IDIndexMap[properties.m_ID] = &element;
         }
 
         ++m_TotalElements;
@@ -101,6 +106,60 @@ void Layout::PopulateIDs()
 }
 
 void Layout::UpdateElement(Element& element)
+{
+    Element::Properties const& properties = element.m_Properties;
+    size_t const childCount = element.m_Children.size();
+
+    // Pass 1: Recalculate children size
+    switch (properties.m_ChildContentLayout)
+    {
+    case ChildContentLayout::Horizontal:
+    case ChildContentLayout::Vertical:
+        RecalculateContiguousLayout(element);
+        break;
+    case ChildContentLayout::Floating:
+    default:
+        RecalculateFloatingLayout(element);
+        break;
+    }
+
+    float childLayoutNormX = 0.0f;
+    float childLayoutNormY = 0.0f;
+    ChildContentLayoutToNormal(properties.m_ChildContentLayout, childLayoutNormX, childLayoutNormY);
+
+    switch (properties.m_ChildContentLayout)
+    {
+    case ChildContentLayout::Horizontal:
+        break;
+    case ChildContentLayout::Vertical:
+        break;
+    }
+
+    float posX = element.m_X;
+    float posY = element.m_Y;
+    for (size_t i = 0; i < childCount; ++i)
+    {
+        Element& child = element.m_Children[i];
+
+        child.m_X = posX;
+        child.m_Y = posY;
+
+        posX += LayoutHelpers::Lerp(0.0f, child.m_Width, childLayoutNormX);
+        posY += LayoutHelpers::Lerp(0.0f, child.m_Height, childLayoutNormY);
+    }
+
+    for (size_t i = 0; i < childCount; ++i)
+    {
+        Element& child = element.m_Children[i];
+        UpdateElement(child);
+    }
+}
+
+// First we calculate the relevant size each element will *try* and be.
+// After this pass, we check to see if we have any remaining size left to use.
+// If we are negative, we remove the size proportionally from the constrained children.
+// If we are positive, we give unconstrained child elements equal portions of the remaining size.
+void Layout::RecalculateContiguousLayout(Element& element)
 {
     Element::Properties const& properties = element.m_Properties;
     bool const iteratorDir = properties.m_ChildGrowthDirection != ChildGrowthDirection::RightToLeft;
@@ -122,8 +181,8 @@ void Layout::UpdateElement(Element& element)
 
         if (childProps.IsConstrained(properties.m_ChildContentLayout))
         {
-            child.m_Width = childProps.m_MaxWidth >= 0.0f ? std::min(element.m_Width, childProps.m_MaxWidth) : element.m_Width;
-            child.m_Height = childProps.m_MaxHeight >= 0.0f ? std::min(element.m_Height, childProps.m_MaxHeight) : element.m_Height;
+            child.m_Width = LayoutHelpers::GetValidValue(childProps.m_MaxWidth, element.m_Width);
+            child.m_Height = LayoutHelpers::GetValidValue(childProps.m_MaxHeight, element.m_Height);
 
             totalConstrainedWidth += child.m_Width;
             totalConstrainedHeight += child.m_Height;
@@ -178,38 +237,31 @@ void Layout::UpdateElement(Element& element)
             }
         }
     }
+}
 
-    float posX = element.m_X;
-    float posY = element.m_Y;
-    for (size_t i = 0; i < childCount; ++i)
-    {
-        Element& child = element.m_Children[i];
-
-        child.m_X = posX;
-        child.m_Y = posY;
-
-        posX += LayoutHelpers::Lerp(0.0f, child.m_Width, childLayoutNormX);
-        posY += LayoutHelpers::Lerp(0.0f, child.m_Height, childLayoutNormY);
-    }
+void Layout::RecalculateFloatingLayout(Element& element)
+{
+    size_t const childCount = element.m_Children.size();
 
     for (size_t i = 0; i < childCount; ++i)
     {
         Element& child = element.m_Children[i];
-        UpdateElement(child);
+        Element::Properties const& childProps = child.m_Properties;
+
+        child.m_Width = LayoutHelpers::GetValidValue(childProps.m_MaxWidth, element.m_Width);
+        child.m_Height = LayoutHelpers::GetValidValue(childProps.m_MaxHeight, element.m_Height);
     }
 }
 
 Layout::Layout()
     : m_Root()
     , m_IDIndexMap()
-    , m_IDElements()
     , m_TotalElements(1)
 { }
 
 Layout::Layout(Element::Properties const& properties, Elements const&& children)
     : m_Root(properties, std::move(children))
     , m_IDIndexMap()
-    , m_IDElements()
     , m_TotalElements(1)
 {
     PopulateIDs();
@@ -218,7 +270,6 @@ Layout::Layout(Element::Properties const& properties, Elements const&& children)
 Layout::Layout(Elements const&& children)
     : m_Root(std::move(children))
     , m_IDIndexMap()
-    , m_IDElements()
     , m_TotalElements(1)
 {
     PopulateIDs();

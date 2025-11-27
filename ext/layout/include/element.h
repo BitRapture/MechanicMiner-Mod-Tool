@@ -1,6 +1,7 @@
 #pragma once
 #include "layout_properties.h"
 #include "percent_or_value.h"
+#include "rect.h"
 
 #include <functional>
 #include <string>
@@ -22,7 +23,8 @@ namespace br::UI
         public:
             std::string m_ID = std::string();
             ChildContentLayout m_ChildContentLayout = ChildContentLayout::Vertical;
-            ChildGrowthDirection m_ChildGrowthDirection = ChildGrowthDirection::LeftToRight;
+            PercentOrValue m_ChildLocalPositionX = 0.0f;
+            PercentOrValue m_ChildLocalPositionY = 0.0f;
             PercentOrValue m_MaxWidth = -1.0f;
             PercentOrValue m_MaxHeight = -1.0f;
 
@@ -32,7 +34,8 @@ namespace br::UI
         public:
             Properties& SetID(std::string const& id);
             Properties& SetChildContentLayout(ChildContentLayout layout);
-            Properties& SetChildGrowthDirection(ChildGrowthDirection direction);
+            Properties& SetChildLocalPositionX(PercentOrValue const& x);
+            Properties& SetChildLocalPositionY(PercentOrValue const& y);
             Properties& SetMaxWidth(PercentOrValue const& maxWidth);
             Properties& SetMaxHeight(PercentOrValue const& maxHeight);
         };
@@ -44,6 +47,7 @@ namespace br::UI
         float GetY() const { return m_Y; }
         float GetWidth() const { return m_Width; }
         float GetHeight() const { return m_Height; }
+        Rect GetRect() const { return { m_X, m_Y, m_Width, m_Height }; }
 
     public:
         void AnchorToPosition(Anchor anchor, float& outX, float& outY) const;

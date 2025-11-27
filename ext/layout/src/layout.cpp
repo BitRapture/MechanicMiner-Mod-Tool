@@ -1,4 +1,5 @@
 #include "layout.h"
+#include "rect.h"
 using namespace br::UI;
 
 #include <utility>
@@ -50,18 +51,32 @@ Element const& Layout::GetElement(std::string const& id) const
 
 bool Layout::FindLastElementRectForPosition(float x, float y, float& outX, float& outY, float& outWidth, float& outHeight) const
 {
+    Rect tempRect;
+
+    bool const foundRect = FindLastElementRectForPosition(x, y, tempRect);
+    outX = tempRect.m_X;
+    outY = tempRect.m_Y;
+    outWidth = tempRect.m_Width;
+    outHeight = tempRect.m_Height;
+
+    return foundRect;
+}
+
+bool Layout::FindLastElementRectForPosition(float x, float y, Rect& outRect) const
+{
     bool foundRect = false;
     Element const* lastElement = &m_Root;
     while (lastElement && !lastElement->m_Children.empty())
     {
+        foundRect = false;
         for (Element const& child : lastElement->m_Children)
         {
             if (LayoutHelpers::InRectBounds(x, y, child.m_X, child.m_Y, child.m_Width, child.m_Height))
             {
-                outX = child.m_X;
-                outY = child.m_Y;
-                outWidth = child.m_Width;
-                outHeight = child.m_Height;
+                outRect.m_X = child.m_X;
+                outRect.m_Y = child.m_Y;
+                outRect.m_Width = child.m_Width;
+                outRect.m_Height = child.m_Height;
 
                 foundRect = true;
                 lastElement = &child;
@@ -123,30 +138,8 @@ void Layout::UpdateElement(Element& element)
         break;
     }
 
-    float childLayoutNormX = 0.0f;
-    float childLayoutNormY = 0.0f;
-    ChildContentLayoutToNormal(properties.m_ChildContentLayout, childLayoutNormX, childLayoutNormY);
-
-    switch (properties.m_ChildContentLayout)
-    {
-    case ChildContentLayout::Horizontal:
-        break;
-    case ChildContentLayout::Vertical:
-        break;
-    }
-
-    float posX = element.m_X;
-    float posY = element.m_Y;
-    for (size_t i = 0; i < childCount; ++i)
-    {
-        Element& child = element.m_Children[i];
-
-        child.m_X = posX;
-        child.m_Y = posY;
-
-        posX += LayoutHelpers::Lerp(0.0f, child.m_Width, childLayoutNormX);
-        posY += LayoutHelpers::Lerp(0.0f, child.m_Height, childLayoutNormY);
-    }
+    // Pass 2: Recalculate children position
+    RecalculatePosition(element);
 
     for (size_t i = 0; i < childCount; ++i)
     {
@@ -162,7 +155,6 @@ void Layout::UpdateElement(Element& element)
 void Layout::RecalculateContiguousLayout(Element& element)
 {
     Element::Properties const& properties = element.m_Properties;
-    bool const iteratorDir = properties.m_ChildGrowthDirection != ChildGrowthDirection::RightToLeft;
 
     float childLayoutNormX = 0.0f;
     float childLayoutNormY = 0.0f;
@@ -250,6 +242,67 @@ void Layout::RecalculateFloatingLayout(Element& element)
 
         child.m_Width = LayoutHelpers::GetValidValue(childProps.m_MaxWidth, element.m_Width);
         child.m_Height = LayoutHelpers::GetValidValue(childProps.m_MaxHeight, element.m_Height);
+    }
+}
+
+// First we position all the children in order from the parent origin
+// Then we calculate the total for the content layout relevant size, and the max for the unrelevant size
+// The position is shifted by an amount calculate from the child position properties
+void Layout::RecalculatePosition(Element& element)
+{
+    Element::Properties const& properties = element.m_Properties;
+    size_t const childCount = element.m_Children.size();
+
+    float childLayoutNormX = 0.0f;
+    float childLayoutNormY = 0.0f;
+    ChildContentLayoutToNormal(properties.m_ChildContentLayout, childLayoutNormX, childLayoutNormY);
+
+    float totalChildWidth = 0.0f;
+    float totalChildHeight = 0.0f;
+    float childMaxWidth = 0.0f;
+    float childMaxHeight = 0.0f;
+    float posX = element.m_X;
+    float posY = element.m_Y;
+    for (size_t i = 0; i < childCount; ++i)
+    {
+        Element& child = element.m_Children[i];
+
+        child.m_X = posX;
+        child.m_Y = posY;
+
+        posX += LayoutHelpers::Lerp(0.0f, child.m_Width, childLayoutNormX);
+        posY += LayoutHelpers::Lerp(0.0f, child.m_Height, childLayoutNormY);
+        totalChildWidth += child.m_Width;
+        totalChildHeight += child.m_Height;
+        childMaxWidth = std::max(childMaxWidth, child.m_Width);
+        childMaxHeight = std::max(childMaxHeight, child.m_Height);
+    }
+
+    switch (properties.m_ChildContentLayout)
+    {
+    case ChildContentLayout::Horizontal:
+        totalChildHeight = childMaxHeight;
+        break;
+    case ChildContentLayout::Vertical:
+        totalChildWidth = childMaxWidth;
+        break;
+    case ChildContentLayout::Floating:
+    default:
+        totalChildHeight = 0.0f;
+        totalChildWidth = 0.0f;
+        break;
+    }
+
+    float const remainderWidth = std::max(element.m_Width - totalChildWidth, 0.0f);
+    float const remainderHeight = std::max(element.m_Height - totalChildHeight, 0.0f);
+    float const posAmountX = LayoutHelpers::GetValidValue(properties.m_ChildLocalPositionX, remainderWidth);
+    float const posAmountY = LayoutHelpers::GetValidValue(properties.m_ChildLocalPositionY, remainderHeight);
+    for (size_t i = 0; i < childCount; ++i)
+    {
+        Element& child = element.m_Children[i];
+
+        child.m_X += posAmountX;
+        child.m_Y += posAmountY;
     }
 }
 

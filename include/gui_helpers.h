@@ -22,7 +22,7 @@ namespace br
     public:
         ListBuilder& Text(std::string const& text, Alignment alignment = Alignment::Left, int textSize = 16)
         {
-            DrawText(text.c_str(), 0.0f, m_Pointer, textSize, BLACK);
+            DrawText(text.c_str(), m_OffsetX, m_Pointer, textSize, BLACK);
             
             m_Pointer += textSize;
             return *this;
@@ -34,7 +34,7 @@ namespace br
             for (int i = 0; i < ListBuilderDefaults::c_TempTextSize; ++i)
                 s_TempText[i] = i < text.size() ? text.at(i) : 0;
 
-            GuiTextBox(raylib::Rectangle(0.0f, m_Pointer, m_ContextSize.x, textSize), s_TempText, ListBuilderDefaults::c_TempTextSize, true);
+            GuiTextBox(raylib::Rectangle(m_OffsetX, m_Pointer, m_ContextSize.x, textSize), s_TempText, ListBuilderDefaults::c_TempTextSize, true);
             text = s_TempText;
 
             m_Pointer += textSize;
@@ -43,7 +43,7 @@ namespace br
 
         ListBuilder& Button(std::string const& text, bool& out_Pressed, Alignment alignment = Alignment::Left, int textSize = 16)
         {
-            int const pressed = GuiButton(raylib::Rectangle(0.0f, m_Pointer, m_ContextSize.x, textSize), text.c_str());
+            int const pressed = GuiButton(raylib::Rectangle(m_OffsetX, m_Pointer, m_ContextSize.x, textSize), text.c_str());
 
             out_Pressed = pressed > 0;
             m_Pointer += textSize;
@@ -51,19 +51,21 @@ namespace br
         }
 
     public:
-        static ListBuilder Build(raylib::Vector2 contextSize) { return ListBuilder(contextSize); }
+        static ListBuilder Build(raylib::Vector2 contextSize, float offsetX) { return ListBuilder(contextSize, offsetX); }
 
-        ListBuilder(raylib::Vector2 const& contextSize)
+        ListBuilder(raylib::Vector2 const& contextSize, float offsetX)
             : m_ContextSize(contextSize)
+            , m_OffsetX(offsetX)
             , m_Pointer(0.0f)
         { }
 
         ListBuilder()
-            : ListBuilder(raylib::Vector2::Zero())
+            : ListBuilder(raylib::Vector2::Zero(), 0.0f)
         { }
 
     private:
         raylib::Vector2 m_ContextSize;
+        float m_OffsetX;
         float m_Pointer;
     };
 }

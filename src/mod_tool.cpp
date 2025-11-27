@@ -7,6 +7,7 @@ namespace ModToolDefaults
     int constexpr c_WindowWidth = 640;
     int constexpr c_WindowHeight = 480;
     char const* c_WindowTitle = "MM Mod Tool (v2.0)";
+    char const* c_UIMainBoxID = "MainBox";
     unsigned int constexpr c_WindowFlags = FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT;
 }
 
@@ -55,29 +56,9 @@ void ModTool::DrawRequirePathScreen()
         m_UI.ResizeContent(m_Window.GetWidth(), m_Window.GetHeight());
     }
 
-    size_t const elementCount = m_UI.GetElementCount();
-    size_t current = 1;
-    m_UI.GetRoot().TraverseChildren([&](UI::Element const& element)
-    {
-        raylib::Rectangle drawRect(element.GetX()
-            , element.GetY()
-            , element.GetWidth()
-            , element.GetHeight());
+    UI::Element const& mainBox = m_UI.GetElement(ModToolDefaults::c_UIMainBoxID); 
 
-        float const val = static_cast<float>(current) / static_cast<float>(elementCount);
-        drawRect.Draw(ColorFromHSV(val * 360.0f, 1.0f, 1.0f));
-
-        ++current;
-    });
-
-    raylib::Vector2 const mousePos = GetMousePosition();
-    raylib::Rectangle drawRect;
-    if (m_UI.FindLastElementRectForPosition(mousePos.x, mousePos.y, drawRect.x, drawRect.y, drawRect.width, drawRect.height))
-    {
-        drawRect.Draw(RAYWHITE);
-    }
-
-    ListBuilder::Build(m_Window.GetSize())
+    ListBuilder::Build(raylib::Vector2(mainBox.GetWidth(), mainBox.GetHeight()), mainBox.GetX())
         .InputText(s_GamePath, Alignment::Left, 30)
         .Button("Submit", gamePathSubmitted);
 
@@ -95,7 +76,7 @@ void ModTool::DrawMainScreen()
 {
     bool exportAssets = false;
 
-    ListBuilder::Build(m_Window.GetSize())
+    ListBuilder::Build(m_Window.GetSize(), 0.0f)
         .Button("Export Assets", exportAssets);
 
     if (exportAssets)
@@ -154,18 +135,14 @@ ModTool::ModTool()
     , m_Info()
     , m_AssetLinks()
     , m_Assets()
-    , m_UI(UI::Element::Properties().SetChildContentLayout(UI::ChildContentLayout::Vertical).SetMaxWidth(UI::Percent(0.75f))
-        , { UI::Element()
-            , UI::Element(UI::Element::Properties().SetChildContentLayout(UI::ChildContentLayout::Horizontal)
-                , { UI::Element()
-                    , UI::Element(UI::Element::Properties().SetChildContentLayout(UI::ChildContentLayout::Vertical)
-                        , { UI::Element()
-                            , UI::Element()
-                            , UI::Element(UI::Element::Properties().SetChildContentLayout(UI::ChildContentLayout::Horizontal)
-                                , { UI::Element()
-                                    , UI::Element()
-                                    , UI::Element()
-                                    , UI::Element(UI::Element::Properties().SetID("Test"))})})
-                    , UI::Element()})
-            , UI::Element()})
+    , m_UI(UI::Element::Properties()
+            .SetChildContentLayout(UI::ChildContentLayout::Horizontal)
+            .SetChildLocalPositionX(UI::Percent(0.5f))
+            .SetChildLocalPositionY(UI::Percent(0.5f)), 
+        { 
+            UI::Element(UI::Element::Properties()
+                        .SetMaxWidth(UI::Percent(0.95f))
+                        .SetMaxHeight(UI::Percent(0.95f))
+                        .SetID(ModToolDefaults::c_UIMainBoxID))
+        })
 { }

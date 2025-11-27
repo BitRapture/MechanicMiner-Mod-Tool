@@ -6,12 +6,15 @@
 
 namespace br::UI
 {
+    struct Rect;
+
     class Layout
     {
     public:
         bool HasID(std::string const& id) const;
         Element const& GetElement(std::string const& id) const;
         bool FindLastElementRectForPosition(float x, float y, float& outX, float& outY, float& outWidth, float& outHeight) const;
+        bool FindLastElementRectForPosition(float x, float y, Rect& outRect) const;
 
     public:
         Element const& GetRoot() const { return m_Root; }
@@ -30,6 +33,7 @@ namespace br::UI
         void UpdateElement(Element& element);
         void RecalculateContiguousLayout(Element& element);
         void RecalculateFloatingLayout(Element& element);
+        void RecalculatePosition(Element& element);
 
     private:
         Element m_Root;

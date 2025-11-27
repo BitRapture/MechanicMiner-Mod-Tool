@@ -85,14 +85,4 @@ namespace br::UI
             break;
         }
     }
-
-    enum class ChildGrowthDirection
-    {
-        LeftToRight = 0,
-        Center,
-        RightToLeft,
-
-        TopToBottom = LeftToRight,
-        BottomToTop = RightToLeft 
-    };
 }
